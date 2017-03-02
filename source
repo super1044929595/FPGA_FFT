@@ -1,0 +1,85 @@
+#ifndef MUSIC_H
+#define MUSIC_H
+#include <QAudioDeviceInfo>
+#include <QAudioOutput>
+#include <QDebug>
+#include <QVBoxLayout>
+#include <qmath.h>
+#include <qendian.h>
+#include "qaudio.h"
+#include "music.h"
+#include "qfile.h"
+
+class music
+{
+public:
+    music();
+    void play(void);
+    QAudioOutput* audio; // class member.
+    QFile sourceFile;   // class member.
+signals:
+    void handleStateChanged(QAudio::State newState);
+};
+
+#endif // MUSIC_H
+
+
+//source
+
+#include "music.h"
+music::music()
+{
+
+
+       audio=new QAudioOutput; // class member.
+       sourceFile.setFileName("D:\\1.wav");
+
+       sourceFile.open(QIODevice::ReadOnly);
+
+       QAudioFormat format;
+       // Set up the format, eg.
+       format.setSampleRate(44000);
+       format.setChannelCount(2);
+       format.setSampleSize(16);
+       format.setCodec("audio/pcm");
+       format.setByteOrder(QAudioFormat::LittleEndian);
+       format.setSampleType(QAudioFormat::UnSignedInt);
+
+       QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
+       if (!info.isFormatSupported(format)) {
+           qWarning() << "Raw audio format not supported by backend, cannot play audio.";
+           return;
+       }
+
+       audio = new QAudioOutput(format, NULL);
+    //   connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+
+       audio->setVolume(15);
+}
+void music::play(void)
+{
+  audio->start(&sourceFile);
+}
+
+void music::handleStateChanged(QAudio::State newState)
+{
+    switch (newState) {
+        case QAudio::IdleState:
+            // Finished playing (no more data)
+            audio->stop();
+            sourceFile.close();
+            delete audio;
+            break;
+
+        case QAudio::StoppedState:
+            // Stopped for other reasons
+            if (audio->error() != QAudio::NoError) {
+                // Error handling
+            }
+            break;
+
+        default:
+            // ... other cases as appropriate
+            break;
+    }
+}
