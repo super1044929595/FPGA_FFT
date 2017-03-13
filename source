@@ -1,3 +1,73 @@
+
+
+fc=350;
+N=1024;
+fs=1024;
+t=[0:1023]*0.01;
+y=sin(2*pi*t*20)+5*sin(2*pi*t*fc)+sin(2*pi*t*102);
+y_fftori=fft(y,N);
+y_fft=abs(fft(y,N));
+fk=(0:N/2-1)*fs/N;
+plot(fk,y_fft(1:N/2));
+
+
+for z=1:N/2
+    power_y(z)=y_fft(z).* y_fft(z);
+end
+power_mean=mean(power_y);
+%handle the squeak
+
+%handle
+M=500;
+Fh= 399;
+Fl= 300;
+M_HAMMING=256;
+kha=hamming(M_HAMMING);
+y_k=filter(kha,1,y(300:399));
+% y_k=y(300:399);
+w=exp(-j*2*pi* (Fh-Fl)/M*fs);
+a = exp(j*2*pi*Fl/fs);
+Y_CZT=czt(y_k,M,w,a);
+Y_CZT=czt(y_k,M);
+Y_CZT=abs(Y_CZT);
+% zplane([Y_CZT]);
+%搜索监测点
+z_offset=30;
+Y_Max=1;
+for z=z_offset:M/2
+     if( Y_CZT(z)   > Y_Max )
+         Y_Max=Y_CZT(z);
+         Squeak_Point=z;    
+     end
+end
+%结束监测点
+
+
+
+fz=(0:M-1).*(Fh-Fl)/M+Fl;
+squeak_index=Squeak_Point;
+squeak_value=Y_Max;
+
+figure;
+subplot(1,2,1);
+plot(abs(fft(Y_CZT)));
+subplot(1,2,2);
+plot(fz,Y_CZT,'*');
+text(squeak_index+300,squeak_value,'The squeak point');
+
+%滤波处理 2017-3-13
+testfilter=squeakfilter;
+y_new=filter(testfilter,y);
+% y_new=zeros(N,1);
+y_new_fft=fft(y_new,N);
+y_new_fft=abs(fft(y_new,N));
+
+
+
+
+            
+
+
 #ifndef MUSIC_H
 #define MUSIC_H
 #include <QAudioDeviceInfo>
